@@ -1,0 +1,81 @@
+{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead) -%}
+    {% if letter_head and not no_letterhead %}
+    <div class="letter-head">{{ letter_head }}</div>
+    {% endif %}
+    {%- if doc.meta.is_submittable and doc.docstatus==0-%}
+    <div class="alert alert-info text-center">
+        <h4 style="margin: 0px;">{{ _("DRAFT") }}</h4></div>
+    {%- endif -%}
+    {%- if doc.meta.is_submittable and doc.docstatus==2-%}
+    <div class="alert alert-danger text-center">
+        <h4 style="margin: 0px;">{{ _("CANCELLED") }}</h4></div>
+    {%- endif -%}
+    {% if max_pages > 1 %}
+    <p class="text-right">{{ _("Page #{0} of {1}").format(page_num, max_pages) }}</p>
+    {% endif %}
+{%- endmacro -%}
+
+<small>
+{{ add_header(0,1,doc,letter_head, no_letterhead) }}
+<big>
+<p class="text-center"><b>{{ _("DEBIT VOUCHER") }}</b></p><br>
+</big>
+
+    <div class="col-xs-6">
+        <div class="row">
+            <div class="col-xs-5 text-right"><big><b>ERP Ref:</b></big></div>
+            <div class="col-xs-7 "><big>{{ doc.name or ''}}</big> </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-5 text-right"> <big><b>Date</b></big> </div>
+            <div class="col-xs-7 ">
+                <big>{{ doc.get_formatted("posting_date") or ''}}</big></div>
+        </div>    
+    
+    </div>
+            
+
+        
+<br>
+
+<table class="table table-condensed table-hover table-bordered">
+        <tr>
+            <th>Sr</th>
+            <th>Expense Type</th>
+            <th class="text-right">Description</th>
+            
+            <th class="text-right">Amount</th>
+        </tr>
+        {%- for row in doc.expenses -%}
+        <tr>
+            <td style="width: 3%;">{{ row.idx }}</td>
+            <td style="width: 25%;"><b>{{ row.expense_type or '' }} </b></td>
+            <td style="width: 45%; text-align: left;">{{ row.description }}</td>
+            <td style="width: 15%; text-align: right;">{{
+                row.get_formatted("amount", doc) or ''}}</td>
+        </tr>
+        {%- endfor -%}
+    </tbody>
+</table>
+<br>
+   
+<div class="row">
+    <div class="col-xs-6 text-right"></div>
+    <div class="col-xs-4 text-right"> <big><b>{{ _("Total") }}</b></big></div>
+    <div class="col-xs-2 ">
+      <big>{{ doc.get_formatted("total_sanctioned_amount") or '' }}</big>
+    </div>
+</div>  
+
+        
+            <div ><big><b>Amount in words:</b></big></div>
+            <div ><big>{{ frappe.utils.money_in_words(doc.total_sanctioned_amount or '')}}</big> </div>
+            <br>
+            <div class="col-xs-4 text-left" ><big><b>For Bullwork Mobility Pvt Ltd</b></big></div>
+            <br><br><br><br>
+            
+            <div class="col-xs-4 text-left" ><big><b>Authorized Signatory</b></big></div>
+            <div class="col-xs-4 text-centre" ><big><b>Accountant</b></big></div>
+            <div class="col-xs-4 text-right" ><big><b>Reciever: {{doc.employee_name}}</b></big></div>
+        
+</small>
