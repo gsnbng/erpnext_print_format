@@ -69,7 +69,7 @@
 <table class="table table-condensed table-hover table-bordered">
         <tr>
             <th>Sr</th>
-            <th>Item code</th>
+            <th>Item code / Drg no</th>
             <th>Description</th>
             <th class="text-right">Quantity</th>
             <th class="text-right">Rate</th>
@@ -80,7 +80,20 @@
         {%- for row in doc.items -%}
         <tr>
             <td style="width: 3%;">{{ row.idx }}</td>
-            <td style="width: 20%;"><b>{{ row.item_code or '' }} </b></td>
+            <td style="width: 20%;"><b>{{ row.item_code or '' }}
+            {%- if row.part_number -%}
+            <br>
+            {{ row.part_number or '' }}
+            <br>
+           
+            {%- endif -%}
+          {%- if row.version -%}
+            <br>
+            <b>Version:</b>{{ row.version or '' }}
+            <br>
+           
+            {%- endif -%}
+            </b></td>
             <td style="width: 45%; text-align: left;">{{ row.item_name or '' }}
             {%- if row.manufacturer -%}
             <br>
