@@ -1,0 +1,118 @@
+{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead) -%}
+    {% if letter_head and not no_letterhead %}
+    <div class="letter-head">{{ letter_head }}</div>
+    {% endif %}
+    {%- if doc.meta.is_submittable and doc.docstatus==0-%}
+    <div class="alert alert-info text-center">
+        <h4 style="margin: 0px;">{{ _("DRAFT") }}</h4></div>
+    {%- endif -%}
+    {%- if doc.meta.is_submittable and doc.docstatus==2-%}
+    <div class="alert alert-danger text-center">
+        <h4 style="margin: 0px;">{{ _("CANCELLED") }}</h4></div>
+    {%- endif -%}
+    {% if max_pages > 1 %}
+    <p class="text-right">{{ _("Page #{0} of {1}").format(page_num, max_pages) }}</p>
+    {% endif %}
+{%- endmacro -%}
+
+<small>
+{{ add_header(0,1,doc,letter_head, no_letterhead) }}
+<big>
+<p class="text-center"><b>{{ _("Bank Payment Advice") }}</b></p><br>
+</big>
+{%-  set doc2 = frappe.get_doc('Payment Entry',doc.payment_details[0].payment_entry) -%}
+{%-  set doc3 = frappe.get_doc('Bank Account',{'account' : doc2.paid_from}) -%}
+{%-  set doc4 = frappe.get_doc('Bank',doc3.bank) -%}
+{% set links = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Bank', 'link_name': doc3.bank, 'parenttype': 'Address'}, fields=['parent']) %}
+{% if links %}
+{% set address = frappe.get_doc("Address", links[0].parent) %}
+{% endif %}
+<div class="row">        
+     <div class="col-xs-6">            
+        <div class="row">
+            <div class="col-xs-5 text-right"><big><b>To</b></big></div>
+            <div class="col-xs-7 "><big>{{doc3.bank}}</big> </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-5 text-right"><big><b>Address</b></big></div>
+            {% if links %}
+            <div class="col-xs-7 "><big>{{frappe.db.get_value('Address', links[0].parent, 'address_line1')}}</big></div>
+            {% endif %}
+        </div>         
+    </div>
+
+    <div class="col-xs-5">
+        <div class="row">
+            <div class="col-xs-5 text-right"><big><b>ERP Ref</b></big></div>
+            <div class="col-xs-7 "><big>{{ doc.name or ''}}</big> </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-5 text-right"> <big><b>Date</b></big> </div>
+            <div class="col-xs-7 ">
+                <big>{{ doc.get_formatted("posting_date") or ''}}</big></div>
+        </div>   
+        </div>
+    </div>
+    <br>
+<div class="row">        
+     
+         Please make following bank transfer for the amount mentioned from our account {{doc3.bank_account_no}}
+         
+         </div>
+<br>
+
+<table class="table table-condensed table-hover table-bordered">
+        <tr>
+            <th>Sr</th>
+            <th>ERP Payment doc </th>
+            <th class="text-left">Party ERP cd</th>
+            <th class="text-left">Party </th>
+            <th class="text-left">Payee Bank</th>
+            <th class="text-left">Bank branch code</th>
+            <th class="text-left">Party bank A/c</th>
+            <th class="text-right">Amount</th>
+        </tr>
+        {%-  set total = 0 -%}
+        {%- for row in doc.payment_details -%}
+        {%-  set doc1 = frappe.get_doc('Payment Entry',row.payment_entry) -%}
+        {%-  set doc5 = frappe.get_doc('Bank Account',{'party' : doc1.party}) -%}
+        <tr>
+            <td style="width: 3%;">{{ row.idx }}</td>
+            <td style="width: 20%;"><b>{{ row.payment_entry or '' }} </b></td>
+            <td style="width: 15%; text-align: left;">{{ doc1.party }}</td>
+            <td style="width: 15%; text-align: left;">{{ doc1.party_name }}</td>
+            <td style="width: 15%; text-align: left;">{{ doc5.bank }}</td>
+            <td style="width: 15%; text-align: left;">{{ doc5.branch_code }}</td>
+            <td style="width: 25%; text-align: left;">{{ doc5.bank_account_no }}</td>
+            <td style="width: 25%; text-align: right;">{{
+                (doc1.get_formatted('paid_amount')) or ''}}</td>
+               
+                {%- set total =  total  + doc1.paid_amount -%}
+        </tr>
+        
+        {%- endfor -%}
+         <tr>
+            <th></th>
+            <th> </th>
+            <th class="text-left"></th>
+            <th class="text-left">Total</th>
+            <th class="text-left"></th>
+            <th class="text-left"></th>
+            <th class="text-left"></th>
+            <th class="text-right">{{total}}</th>
+        </tr>
+    </tbody>
+</table>
+<br>
+   
+            <div ><big><b>Amount in words:</b></big></div>
+            <div ><big>{{ frappe.utils.money_in_words(total or '')}}</big> </div>
+            <br><br><br>
+            <div class="col-xs-4 text-left" ><big><b>For Bullwork Mobility Pvt Ltd</b></big></div>
+            <br><br><br><br>
+            
+            <div class="col-xs-4 text-left" ><big><b>Authorized Signatory</b></big></div>
+            <div class="col-xs-4 text-centre" ><big><b>Accountant</b></big></div>
+            <div class="col-xs-4 text-right" ><big><b>Printed by: {{frappe.user}}</b></big></div>
+        
+</small>
