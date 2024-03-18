@@ -1,0 +1,182 @@
+{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead) -%}
+    {% if letter_head and not no_letterhead %}
+    <div class="letter-head">{{ letter_head }}</div>
+    {% endif %}
+    {%- if doc.meta.is_submittable and doc.docstatus==0-%}
+    <div class="alert alert-info text-center">
+        <h4 style="margin: 0px;">{{ _("PROFORMA") }}</h4></div>
+    {%- endif -%}
+    {%- if doc.meta.is_submittable and doc.docstatus==2-%}
+    <div class="alert alert-danger text-center">
+        <h4 style="margin: 0px;">{{ _("CANCELLED") }}</h4></div>
+    {%- endif -%}
+    {% if max_pages > 1 %}
+    <p class="text-right">{{ _("Page #{0} of {1}").format(page_num, max_pages) }}</p>
+    {% endif %}
+{%- endmacro -%}
+
+<small>
+{{ add_header(0,1,doc,letter_head, no_letterhead) }}
+<big>
+<p class="text-center"><b>{{ _("Proforma  Invoice") }}</b></p><br>
+</big>
+<div class="row">        
+     <div class="col-xs-6">            
+        <div class="row">
+            <div class="col-xs-5 text-right"><big><b>Customer Name</b></big></div>
+            <div class="col-xs-7 "><big>{{ doc.customer_name or '' }}</big> </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-5 text-right"><big><b>Billing Address</b></big></div>
+            <div class="col-xs-7 "><big>{{ doc.address_display or '' }}</big></div>
+        </div>                 
+    </div>
+    {%- set pi = 'PI-' + doc.name -%}
+    <div class="col-xs-6">
+        <div class="row">
+            <div class="col-xs-6 text-right"><big><b>No</b></big></div>
+            <div class="col-xs-6 "><big>{{ pi or '' }}</big> </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-6 text-right"> <big><b>Date</b></big> </div>
+            <div class="col-xs-6 "><big>{{ doc.get_formatted("transaction_date") or '' }}</big></div>
+        </div> 
+           
+         {%- if doc.po_no -%}
+        <div class="row">
+            <div class="col-xs-6 text-right"><big><b>PO No</b></big></div>
+            <div class="col-xs-6 "><big>{{ doc.po_no or ''}}</big> </div>
+        </div>
+         {%- endif -%}
+    </div>
+            
+</div>
+        
+<br>
+
+<table class="table table-condensed table-hover table-bordered">
+        <tr>
+            <th>Sr</th>
+            <th>Description</th>
+            <th class="text-right">Quantity</th>
+            <th class="text-right">Rate</th>
+            <th class="text-right">Amount</th>
+        </tr>
+        {%- for row in doc.items -%}
+        <tr>
+            <td style="width: 3%;">{{ row.idx }}</td>
+            <td style="width: 57%;"><b>{{ row.item_code or '' }} </b><br> 
+                 {{ row.description or '' }}  </td>
+            <td style="width: 10%; text-align: right;">{{ row.qty }}</td>
+            <td style="width: 15%; text-align: right;">
+                
+                {{ row.get_formatted("rate", doc) or ''}}
+            <td style="width: 25%; text-align: right;">{{
+                row.get_formatted("amount", doc) or ''}}</td>
+        </tr>
+        {%- endfor -%}
+
+    
+      <tr>
+    <td style="width: 3%;"></td>
+    <td style="width: 20%;"><b>{{ _("Net Total") }} </b></td>
+    <td style="width: 20%; text-align: left;">
+
+    <b> </b></td>
+     <td style="width: 5%; text-align: right;">
+               </td>
+   
+    <td style="width: 15%; text-align: right;">
+    {{ doc.get_formatted("net_total") }}
+    </td>
+    </tr>
+
+     {%- for row in doc.taxes -%}
+    {%- if not row.included_in_print_rate -%}
+    {%- if row.tax_amount -%}
+    <tr>
+    <td style="width: 3%;"></td>
+    <td style="width: 20%;"><b>{{ row.description }}</b></td>
+    <td style="width: 20%; text-align: left;">
+
+    <b> </b></td>
+     <td style="width: 5%; text-align: right;">
+               </td>
+    
+    <td style="width: 25%; text-align: right;">
+    {{ row.get_formatted("tax_amount", doc) }}
+    </td>
+    </tr>
+    {%- endif -%}
+    {%- endif -%}
+{%- endfor -%}  
+
+  <tr>
+    <td style="width: 3%;"></td>
+    <td style="width: 20%;"><b>{{ _("Grand Total") }} </b></td>
+    <td style="width: 20%; text-align: left;">
+
+    <b> </b></td>
+     <td style="width: 5%; text-align: right;">
+               </td>
+    
+    <td style="width: 15%; text-align: right;">
+    {{ doc.get_formatted("grand_total") }}
+    </td>
+    </tr>
+    
+    <tr>
+    <td style="width: 3%;"></td>
+    <td style="width: 20%;"><b>{{ _("In words ") }} {{ doc.get_formatted("in_words") }}</b></td>
+    <td style="width: 20%; text-align: left;">
+
+    <b> </b></td>
+     <td style="width: 5%; text-align: right;">
+               </td>
+    
+    <td style="width: 15%; text-align: right;">
+    </td>
+    </tr>
+    
+    <tr>
+            <th></th>
+            <th>Payment Schedule</th>
+            <th class="text-right"></th>
+            <th class="text-right"></th>
+            <th class="text-right"></th>
+        </tr>
+    <tr>
+            <th></th>
+            <th>Due date</th>
+            <th class="text-right"></th>
+            <th class="text-right"></th>
+            <th class="text-right"></th>
+        </tr>
+     {%- for row in doc.payment_schedule -%}
+    
+    
+    <tr>
+    <td style="width: 3%;">{{row.idx}}</td>
+    <td style="width: 20%;"><b>{{row.due_date}}</b></td>
+    <td style="width: 20%; text-align: left;">
+
+    <b> {{ row.payment_term }}</b></td>
+     <td style="width: 5%; text-align: right;">
+               </td>
+    
+    <td style="width: 25%; text-align: right;">
+    {{ row.get_formatted("payment_amount", doc) }}
+    </td>
+    </tr>
+   
+{%- endfor -%}  
+</tbody>
+</table>
+<br>
+    
+
+    <div class='note'> It is requested to release Advance payment as above at the earliest for processing the order </div>
+    
+<br><br><br><br>               
+<p>This is a ERP System generated document and does not need Signature</p>
+</small>
