@@ -18,7 +18,7 @@
 <small>
 {{ add_header(0,1,doc,letter_head, no_letterhead) }}
 <big>
-<p class="text-center"><b>{{ _("Proforma  Invoice") }}</b></p><br>
+<p class="text-center1"><b>{{ _("Proforma  Invoice") }}</b></p><br>
 </big>
 <div class="row">        
      <div class="col-xs-6">            
@@ -57,17 +57,17 @@
 <table class="table table-condensed table-hover table-bordered">
         <tr>
             <th>Sr</th>
-            <th>Description</th>
-            <th class="text-right">Quantity</th>
-            <th class="text-right">Rate</th>
-            <th class="text-right">Amount</th>
+            <th class="text-center">Description</th>
+            <th class="text-center">Quantity</th>
+            <th class="text-center">Rate</th>
+            <th class="text-center">Amount</th>
         </tr>
         {%- for row in doc.items -%}
         <tr>
             <td style="width: 3%;">{{ row.idx }}</td>
-            <td style="width: 57%;"><b>{{ row.item_code or '' }} </b><br> 
+            <td style="width: 47%;"><b>{{ row.item_code or '' }} </b><br> 
                  {{ row.description or '' }}  </td>
-            <td style="width: 10%; text-align: right;">{{ row.qty }}</td>
+            <td style="width: 5%; text-align: center;">{{ row.qty }}</td>
             <td style="width: 15%; text-align: right;">
                 
                 {{ row.get_formatted("rate", doc) or ''}}
@@ -173,10 +173,60 @@
 </tbody>
 </table>
 <br>
-    
+ 
 
     <div class='note'> It is requested to release Advance payment as above at the earliest for processing the order </div>
+    <div class='note'> Please make the payment to following account </div>
+     {%- set bank = frappe.get_doc('Payment Request',{'reference_name':doc.name}) -%}  
+<table class="table table-condensed table-hover table-bordered"> <tbody> 
+       <tr>
+    <td style="width: 10%;">Bank</td>
+    <td style="width: 20%;"><b>{{bank.bank}}</b></td>
+    </tr>
+    <tr>
+    <td style="width: 10%;">Account No</td>
+    <td style="width: 20%;"><b>{{bank.bank_account_no}}</b></td>
+    </tr>
+ <tr>
+    <td style="width: 10%;">Branch code</td>
+    <td style="width: 20%;"><b>{{bank.branch_code}}</b></td>
+    </tr>
+</tbody>
+</table>
+    
+<br><br><br>               
+<p>This is a ERP System generated document and does not need Signature</p>
+
+</small>
     
 <br><br><br><br>               
 <p>This is a ERP System generated document and does not need Signature</p>
 </small>
+
+
+.text-center {
+    width:auto;
+    color: #666666;
+    font-size: 10px;
+    font-family: "Times New Roman", serif;
+    margin-right: 50px;
+    
+}
+.text-center1 {
+    width:auto;
+    color: #666666;
+    font-size: 25px;
+    font-family: "Times New Roman", serif;
+    margin-right: 50px;
+    text-align: center;
+    
+}
+
+.note {
+    width:auto;
+    color: #666666;
+    font-size: 15px;
+    font-family: "Times New Roman", serif;
+    margin-right: 50px;
+    
+}
