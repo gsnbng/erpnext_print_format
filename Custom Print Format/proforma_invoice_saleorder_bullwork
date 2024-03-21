@@ -34,11 +34,11 @@
     {%- set pi = 'PI-' + doc.name -%}
     <div class="col-xs-6">
         <div class="row">
-            <div class="col-xs-6 text-right"><big><b>No</b></big></div>
-            <div class="col-xs-6 "><big>{{ pi or '' }}</big> </div>
+            <div class="col-xs-6 text-left"><big><b>No</b></big></div>
+            <div class="col-xs-7 text-right"><big>{{ pi or '' }}</big> </div>
         </div>
         <div class="row">
-            <div class="col-xs-6 text-right"> <big><b>Date</b></big> </div>
+            <div class="col-xs-6 text-left"> <big><b>Date</b></big> </div>
             <div class="col-xs-6 "><big>{{ doc.get_formatted("transaction_date") or '' }}</big></div>
         </div> 
            
@@ -198,11 +198,6 @@
 <p>This is a ERP System generated document and does not need Signature</p>
 
 </small>
-    
-<br><br><br><br>               
-<p>This is a ERP System generated document and does not need Signature</p>
-</small>
-
 
 .text-center {
     width:auto;
