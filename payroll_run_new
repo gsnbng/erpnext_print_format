@@ -1,0 +1,206 @@
+prev_date = frappe.utils.getdate('03-31-' + str(frappe.utils.getdate(frappe.utils.today()).year-1))
+#sal_slip = frappe.db.get_value('Salary Slip',{'employee' : doc.employee, 'end_date': prev_date},'name')
+#cum_var = frappe.db.get_value('Salary Detail',{'parent':sal_slip, 'salary_component' : 'Basic'},'year_to_date')
+sal_date = frappe.utils.getdate(doc.start_date)
+rating = 0
+
+ytd1 = 0
+ytd2 = 0 
+ytd3 = 0
+ytd4 = 0
+ytd5 = 0
+ytd6 = 0
+ytd7 = 0
+ytd8 = 0
+ytd9 = 0
+
+#base = frappe.db.get_value('Salary Structure Assignment',{'employee':doc.employee},'base')
+base = frappe.db.get_list('Salary Structure Assignment',filters={'employee':doc.employee},order_by='creation desc',fields=['base'])[0]['base']
+ytd = frappe.db.get_value('Salary Structure Assignment',{'employee':doc.employee},'taxable_earnings_till_date')
+if frappe.db.exists('Salary Slip',{'employee':doc.employee}):
+    prev_slip = frappe.get_doc('Salary Slip',{'employee':doc.employee})
+    if prev_slip.start_date.month > 3 and prev_slip.start_date.year == sal_date.year:
+        ytd1 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Basic'},'year_to_date')
+        ytd2 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Employer Contribution PF'},'year_to_date')
+        ytd3 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Employer Contribution EDLI & Service charge'},'year_to_date')
+        ytd4 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Employer Contribution PF - Deduction'},'year_to_date')
+        ytd5 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Employee Contribution PF'},'year_to_date')
+        ytd6 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Health Insurance'},'year_to_date')
+        ytd7 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'HRA'},'year_to_date')
+        ytd8 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Conveyance Allowance'},'year_to_date')
+        ytd9 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Special Allowance'},'year_to_date')
+rating = frappe.db.get_value('Appraisal',{'employee':doc.employee, 'end_date' : prev_date},'total_score')
+
+base = float(base*doc.payment_days/doc.total_working_days)
+basic = 0
+hra = 0 
+ca = 0
+sa = 0
+variable =False
+chk2 = False
+chk3 = False
+chk4 = False
+chk5 = False
+chk6 = False
+chk7 = False
+chk8 = False
+chk9 = False
+comp_remove = []
+
+#doc.gross_pay = float(base)
+#doc.base_gross_pay = float(base)
+
+for d in doc.earnings:
+    if d.salary_component == 'Basic':
+        
+        d.amount = float(15000*doc.payment_days/doc.total_working_days)
+        d.year_to_date = float(15000*doc.payment_days/doc.total_working_days)  + float(ytd1)
+        ytd1 = d.year_to_date
+        basic = d.amount
+        
+    if d.salary_component == 'HRA':
+        chk7=True
+        
+    if d.salary_component == 'Conveyance Allowance':
+        chk8=True
+        
+    if d.salary_component == 'Special Allowance':
+        chk9=True
+ 
+    if d.salary_component == 'Employer Contribution PF':
+        chk2=True
+        
+    if d.salary_component == 'Employer Contribution EDLI & Service charge':
+        chk3=True
+        
+    
+        
+for d in doc.deductions:
+    if d.salary_component == 'Employer Contribution PF - Deduction':
+        chk4=True
+        
+    if d.salary_component == 'Employee Contribution PF':
+        chk5=True
+        
+    if d.salary_component == 'Health Insurance':
+        chk6=True
+
+if not chk7:
+    row = doc.append('earnings', {})
+    row.salary_component = 'HRA'
+    row.amount = basic*0.50
+    hra = row.amount
+    row.year_to_date = row.amount  + float(ytd7)
+    ytd7 = row.year_to_date 
+
+if not chk8:
+    row = doc.append('earnings', {})
+    row.salary_component = 'Conveyance Allowance'
+    row.amount = basic*0.12
+    ca = row.amount
+    row.year_to_date = row.amount  + float(ytd8)
+    ytd8 = row.year_to_date 
+
+if not chk9:
+    row = doc.append('earnings', {})
+    row.salary_component = 'Special Allowance'
+    if base-basic-hra-ca > 0:
+        row.amount = base-basic-hra-ca
+    else:
+        row.amount = 0
+    sa = row.amount
+    row.year_to_date = row.amount  + float(ytd9)
+    ytd9 = row.year_to_date 
+
+
+if not chk2:
+    row = doc.append('earnings', {})
+    row.salary_component = 'Employer Contribution PF'
+    if basic <= 15000:
+        row.amount = float(basic)*0.12
+    else:
+        row.amount = basic*0.12
+    
+        
+    row.year_to_date = row.amount  + float(ytd2)
+    ytd2 = row.year_to_date 
+
+if not chk3:        
+    row = doc.append('earnings', {})
+    row.salary_component = 'Employer Contribution EDLI & Service charge'
+    if basic <= 15000:
+        row.amount = float(basic)*0.01
+    else:
+        row.amount = basic*0.01
+    row.year_to_date = row.amount  + float(ytd3)
+    ytd3 = row.year_to_date 
+
+
+if not chk4:
+    row = doc.append('deductions', {})
+    row.salary_component = 'Employer Contribution PF - Deduction'
+    if basic <= 15000:
+        row.amount = float(basic)*0.13
+    else:
+        row.amount = basic*0.13    
+    row.year_to_date = row.amount  + float(ytd4)
+    ytd4 = row.year_to_date
+
+if not chk5:    
+    row = doc.append('deductions', {})
+    row.salary_component = 'Employee Contribution PF'
+    if basic <= 15000:
+        row.amount = float(basic)*0.12
+    else:
+        row.amount = basic*0.12   
+    row.year_to_date = row.amount  + float(ytd5)
+    ytd5 = row.year_to_date
+
+
+if not chk6:
+    if doc.employee != 'HR-EMP-10004':
+        row = doc.append('deductions', {})
+        row.salary_component = 'Health Insurance'
+        row.amount = 300
+        row.year_to_date = row.amount  + float(ytd6)
+        ytd6 = row.year_to_date
+
+
+
+ern = 0
+ernytd = 0 
+for d in doc.earnings:
+    ern = ern + d.amount
+    ernytd = ernytd + d.year_to_date
+doc.gross_pay = ern
+doc.base_gross_pay = ern
+doc.gross_year_to_date = ernytd
+
+ded = 0
+dedytd = 0 
+for d in doc.deductions:
+        
+    if d.salary_component == 'Income Tax' and base*12 <= 700000:
+        d.amount = 0
+        d.year_to_date = 0
+    ded = ded + d.amount
+    dedytd = dedytd + d.year_to_date
+
+doc.total_deduction = ded
+
+
+doc.net_pay = doc.gross_pay - doc.total_deduction
+doc.base_net_pay = doc.gross_pay - doc.total_deduction
+doc.rounded_total = round((doc.gross_pay - doc.total_deduction),0)
+doc.base_rounded_total = round((doc.base_gross_pay - doc.base_total_deduction),0)
+doc.month_to_date = doc.gross_pay - doc.total_deduction
+doc.base_month_to_date = doc.base_gross_pay - doc.base_total_deduction
+doc.year_to_date = doc.gross_year_to_date - doc.total_deduction
+#doc.base_year_to_date = doc.gross_year_to_date - doc.total_deduction
+doc.base_gross_year_to_date = doc.gross_year_to_date
+doc.base_year_to_date = doc.base_gross_year_to_date - doc.base_total_deduction
+    
+
+   
+
+
