@@ -88,7 +88,10 @@ for d in doc.deductions:
 if not chk7:
     row = doc.append('earnings', {})
     row.salary_component = 'HRA'
-    row.amount = basic*0.50
+    if base > 1.5 * basic:
+        row.amount = basic*0.50
+    else:
+        row.amount = base - basic
     hra = row.amount
     row.year_to_date = row.amount  + float(ytd7)
     ytd7 = row.year_to_date 
@@ -96,7 +99,13 @@ if not chk7:
 if not chk8:
     row = doc.append('earnings', {})
     row.salary_component = 'Conveyance Allowance'
-    row.amount = basic*0.12
+    if base-basic-hra > basic * 0.12:
+        row.amount = basic*0.12
+    elif base-basic-hra > 0:
+        row.amount = base-basic-hra
+    else:
+        row.amount = 0
+        
     ca = row.amount
     row.year_to_date = row.amount  + float(ytd8)
     ytd8 = row.year_to_date 
@@ -199,6 +208,12 @@ doc.year_to_date = doc.gross_year_to_date - doc.total_deduction
 #doc.base_year_to_date = doc.gross_year_to_date - doc.total_deduction
 doc.base_gross_year_to_date = doc.gross_year_to_date
 doc.base_year_to_date = doc.base_gross_year_to_date - doc.base_total_deduction
+    
+
+   
+
+
+
     
 
    
