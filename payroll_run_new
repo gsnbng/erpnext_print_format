@@ -14,17 +14,15 @@ ytd7 = 0
 ytd8 = 0
 ytd9 = 0
 
-#base = frappe.db.get_value('Salary Structure Assignment',{'employee':doc.employee},'base')
-base = frappe.db.get_list('Salary Structure Assignment',filters={'employee':doc.employee},order_by='creation desc',fields=['base'])[0]['base']
-ytd = frappe.db.get_value('Salary Structure Assignment',{'employee':doc.employee},'taxable_earnings_till_date')
+base = frappe.db.get_list('Salary Structure Assignment',{'employee':doc.employee,'from_date': ('<',frappe.utils.getdate(doc.end_date))},'base',order_by='name')[-1]['base']
+#ytd = frappe.db.get_value('Salary Structure Assignment',{'employee':doc.employee,'from_date': ('<',frappe.utils.getdate(doc.end_date))},'taxable_earnings_till_date')[-1]['taxable_earnings_till_date']
 if frappe.db.exists('Salary Slip',{'employee':doc.employee}):
     prev_slip = frappe.get_doc('Salary Slip',{'employee':doc.employee})
     if prev_slip.start_date.month > 3 and prev_slip.start_date.year == sal_date.year:
         ytd1 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Basic'},'year_to_date')
         ytd2 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Employer Contribution PF'},'year_to_date')
         ytd3 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Employer Contribution EDLI & Service charge'},'year_to_date')
-        ytd4 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Employer Contribution PF - Deduction'},'year_to_date')
-        ytd5 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Employee Contribution PF'},'year_to_date')
+        ytd4 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Employee Contribution PF'},'year_to_date')
         ytd6 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Health Insurance'},'year_to_date')
         ytd7 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'HRA'},'year_to_date')
         ytd8 = frappe.db.get_value('Salary Detail',{'parent':prev_slip.name, 'salary_component':'Conveyance Allowance'},'year_to_date')
@@ -88,10 +86,7 @@ for d in doc.deductions:
 if not chk7:
     row = doc.append('earnings', {})
     row.salary_component = 'HRA'
-    if base > 1.5 * basic:
-        row.amount = basic*0.50
-    else:
-        row.amount = base - basic
+    row.amount = basic*0.50
     hra = row.amount
     row.year_to_date = row.amount  + float(ytd7)
     ytd7 = row.year_to_date 
@@ -99,13 +94,7 @@ if not chk7:
 if not chk8:
     row = doc.append('earnings', {})
     row.salary_component = 'Conveyance Allowance'
-    if base-basic-hra > basic * 0.12:
-        row.amount = basic*0.12
-    elif base-basic-hra > 0:
-        row.amount = base-basic-hra
-    else:
-        row.amount = 0
-        
+    row.amount = basic*0.12
     ca = row.amount
     row.year_to_date = row.amount  + float(ytd8)
     ytd8 = row.year_to_date 
@@ -113,10 +102,7 @@ if not chk8:
 if not chk9:
     row = doc.append('earnings', {})
     row.salary_component = 'Special Allowance'
-    if base-basic-hra-ca > 0:
-        row.amount = base-basic-hra-ca
-    else:
-        row.amount = 0
+    row.amount = base-basic-hra-ca
     sa = row.amount
     row.year_to_date = row.amount  + float(ytd9)
     ytd9 = row.year_to_date 
@@ -165,7 +151,6 @@ if not chk5:
     row.year_to_date = row.amount  + float(ytd5)
     ytd5 = row.year_to_date
 
-
 if not chk6:
     if doc.employee != 'HR-EMP-10004':
         row = doc.append('deductions', {})
@@ -211,6 +196,9 @@ doc.base_year_to_date = doc.base_gross_year_to_date - doc.base_total_deduction
     
 
    
+
+
+
 
 
 
