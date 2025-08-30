@@ -28,7 +28,7 @@ consignee/consignor, transport details, and an items table.
 {% set company_address = frappe.db.get_value("Address", company.primary_address, "name") if company else None %}
 
 
-{% set title_text = "RETURNABLE DELIVERY NOTE" if doc.get("returnable_dc") else "DELIVERY CHALLAN (NON-RETURNABLE)" %}
+{% set title_text = "DELIVERY CHALLAN (RETURNABLE)" if doc.get("custom_transfer_for") in ["Service Order","Warranty Repair","Returnable"] else "DELIVERY CHALLAN (NON-RETURNABLE)" %}
 
 <div class="headline">{{ title_text }}</div>
 <br><br>
@@ -65,11 +65,13 @@ consignee/consignor, transport details, and an items table.
         
         {% set address_name = frappe.db.get_value("Dynamic Link", { "link_name": to_wh.split(":")[0]}, "parent") %}
          {% if address_name  %}
-          {{ frappe.db.get_value('Address',address_name,'address_line1')}}
-          {{ frappe.db.get_value('Address',address_name,'address_line2')}}
-          {{ frappe.db.get_value('Address',address_name,'city')}}
-          {{ frappe.db.get_value('Address',address_name,'state')}}
-          {{ frappe.db.get_value('Address',address_name,'pincode')}}
+          {{ frappe.db.get_value('Address',address_name,'address_line1') or ""}}
+          {{ frappe.db.get_value('Address',address_name,'address_line2') or ""}}
+          {{ frappe.db.get_value('Address',address_name,'city') or ""}}
+          {{ frappe.db.get_value('Address',address_name,'state') or ""}}
+          {{ frappe.db.get_value('Address',address_name,'pincode') or ""}}
+          <br><br>
+          GST: {{ frappe.db.get_value('Address',address_name,'gstin') or ""}}
         {% endif %}
         {% endif %}</div>
         </div>
@@ -91,7 +93,7 @@ consignee/consignor, transport details, and an items table.
     <div class="col-xs-5">
         <div class="row">
             <div class="col-xs-5 text-right"><big><b>Purchase Order No.</b></big></div>
-            <div class="col-xs-7 "><big>{{ doc.po_no or ''}}</big> </div>
+            <div class="col-xs-7 "><big>{{ doc.custom_service_order or ''}}</big> </div>
         </div>
         <div class="row">
             <div class="col-xs-5 text-right"> <big><b>Date</b></big> </div>
@@ -219,3 +221,4 @@ consignee/consignor, transport details, and an items table.
  
 
 </div>
+
