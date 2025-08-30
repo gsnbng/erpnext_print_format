@@ -1,0 +1,226 @@
+<!--
+Print Format: Delivery Challan (Stock Entry - Material Transfer)
+DocType: Stock Entry
+Usage: Import this as a Custom Print Format (HTML) in ERPNext and select for Stock Entry (Material Transfer).
+This template aligns to the attached Excel ("Delivery Challan Format.xlsx") with sections for header,
+consignee/consignor, transport details, and an items table.
+-->
+{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead) -%}
+    {% if letter_head and not no_letterhead %}
+    <div class="letter-head">{{ letter_head }}</div>
+    {% endif %}
+    {%- if doc.meta.is_submittable and doc.docstatus==0-%}
+    <div class="alert alert-info text-center">
+        <h4 style="margin: 0px;">{{ _("DRAFT") }}</h4></div>
+    {%- endif -%}
+    {%- if doc.meta.is_submittable and doc.docstatus==2-%}
+    <div class="alert alert-danger text-center">
+        <h4 style="margin: 0px;">{{ _("CANCELLED") }}</h4></div>
+    {%- endif -%}
+    {% if max_pages > 1 %}
+    <p class="text-right">{{ _("Page #{0} of {1}").format(page_num, max_pages) }}</p>
+    {% endif %}
+{%- endmacro -%}
+
+<small>
+
+{% set company = frappe.get_doc("Company", doc.company) if doc.company else None %}
+{% set company_address = frappe.db.get_value("Address", company.primary_address, "name") if company else None %}
+
+
+{% set title_text = "DELIVERY CHALLAN (RETURNABLE)" if doc.get("custom_transfer_for") in ["Service Order","Warranty Repair","Returnable"] else "DELIVERY CHALLAN (NON-RETURNABLE)" %}
+
+<div class="headline">{{ title_text }}</div>
+<br><br>
+{{ add_header(0,1,doc,letter_head, no_letterhead) }}
+<style>
+.print-format {
+  font-size: 10.5pt;
+  font-family: "Inter", Arial, sans-serif;
+  color: #000;
+}
+.headline { text-align:center; font-weight:700; font-size:14pt; text-transform:uppercase; letter-spacing:0.5px; }
+.company-name { text-align:center; font-weight:700; font-size:12.5pt; }
+.company-address { text-align:center; white-space:pre-line; }
+.grid { width:100%; border-collapse:collapse; }
+.grid th, .grid td { border:1px solid #000; padding:6px 8px; vertical-align:top; }
+.meta td { border:1px solid #000; padding:6px 8px; }
+.small { font-size:9pt; }
+.right { text-align:right; }
+.center { text-align:center; }
+.nowrap { white-space:nowrap; }
+.signature { height:60px; }
+.no-border td { border:0 !important; }
+</style>
+
+<br><br>
+<div class="row">        
+     <div class="col-xs-6">            
+        <div class="row">
+           
+            <div class="col-xs-5 text-right"><big><b>Consignee </b></big></div>
+            <div class="col-xs-7 "><big>{{ doc.customer_name or "" }}<br>
+        </big><br>
+        {{ doc.address_display or "" }}
+        
+        {% set to_wh = doc.to_warehouse or (doc.items[0].t_warehouse if doc.items and doc.items[0].t_warehouse else "") %}
+        {% if to_wh  %}
+        
+        {% set address_name = frappe.db.get_value("Dynamic Link", { "link_name": to_wh.split(":")[0]}, "parent") %}
+         {% if address_name  %}
+          {{ frappe.db.get_value('Address',address_name,'address_line1') or ""}}
+          {{ frappe.db.get_value('Address',address_name,'address_line2') or ""}}
+          {{ frappe.db.get_value('Address',address_name,'city') or ""}}
+          {{ frappe.db.get_value('Address',address_name,'state') or ""}}
+          {{ frappe.db.get_value('Address',address_name,'pincode') or ""}}
+          <br><br>
+          GST: {{ frappe.db.get_value('Address',address_name,'gstin') or ""}}{{ doc.billing_address_gstin or "" }}
+        {% endif %}
+        {% endif %}</div>
+        </div>
+                 
+    </div>
+
+<div class="row">        
+     <div class="col-xs-6">            
+        <div class="row">
+            <div class="col-xs-5 text-right"><big><b>Challan No.</b></big></div>
+            <div class="col-xs-7 "><big>{{ doc.name }}</big> </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-5 text-right"><big><b>Date</b></big></div>
+            <div class="col-xs-7 "><big>{{ frappe.format_date(doc.posting_date) if doc.posting_date else "" }}</big></div>
+        </div>         
+    </div>
+
+    <div class="col-xs-5">
+        <div class="row">
+            <div class="col-xs-5 text-right"><big><b>Purchase Order No.</b></big></div>
+            <div class="col-xs-7 "><big>{{ doc.custom_service_order or ''}}{{ doc.po_no or ''}}</big> </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-5 text-right"> <big><b>Date</b></big> </div>
+            <div class="col-xs-7 ">
+                <big>{{ doc.get_formatted("order_date") or ''}}{{ doc.po_date or ''}}</big></div>
+        </div>   
+        </div>
+    </div>
+    <br>
+   
+         
+        
+  <br>
+
+ 
+
+  <br>
+   
+<br>
+
+<table class="table table-condensed table-hover table-bordered">
+        <tr>
+            <th>Sr</th>
+            <th>Item code / Drg no</th>
+            <th>HSN code</th>
+            <th>Description</th>
+            <th class="text-right">Qty</th>
+            <th class="text-right">Rate</th>
+            <th class="text-right">UOM</th>
+            
+            <th class="text-right">Amount</th>
+        </tr>
+        {%- for row in doc.items -%}
+        <tr>
+            <td style="width: 3%;">{{ row.idx }}</td>
+            <td style="width: 20%;"><b>{{ row.item_code or '' }}
+            {%- if row.part_number -%}
+            <br>
+            {{ row.part_number or '' }}
+            <br>
+           
+            {%- endif -%}
+          {%- if row.version -%}
+            <br>
+            <b>Version:</b>{{ row.version or '' }}
+            <br>
+           
+            {%- endif -%}
+            </b></td>
+            <td style="width: 20%;">
+                {% set hsncode = frappe.db.get_value('Item',row.item_code,'gst_hsn_code') or "" %}
+                {{hsncode}}</td>
+            <td style="width: 40%; text-align: left;">{{ row.item_name or '' }}
+            {%- if row.manufacturer -%}
+            <br>
+            <b>Make :</b>{{ row.manufacturer or '' }}
+            <br>
+            <b>Type no:</b> {{ row.manufacturer_part_no or '' }}</td>
+            {%- endif -%}
+            
+            <td style="width: 5%; text-align: right;">
+                {{ row.qty }}</td>
+
+            <td style="width: 15%; text-align: right;">
+                {% if row.basic_rate %}{{ frappe.format_value(row.basic_rate, {"fieldtype":"Currency"}) }}{% else %}-{% endif %}</td>
+            <td style="width: 5%; text-align: left;">
+                {{ row.uom }}</td>
+            <td style="width: 25%; text-align: right;">{{
+                row.get_formatted("amount", doc) or ''}}</td>
+        </tr>
+        {%- endfor -%}
+        
+        <tr>
+    <td style="width: 3%;"></td>
+    <td style="width: 20%;"><b> </b></td>
+    <td style="width: 20%; text-align: left;">
+
+    <b> {{ _("Net Total") }}</b></td>
+     <td style="width: 5%; text-align: right;">
+               </td>
+    <td style="width: 10%; text-align: right;"></td>
+    <td style="width: 15%; text-align: left;"></td>
+    <td style="width: 5%; text-align: left;"></td>
+    <td style="width: 25%; text-align: right;">
+    {{ frappe.format_value(doc.base_grand_total, {"fieldtype":"Currency"}) }}
+    </td>
+    </tr>
+    </table>
+   <table class="grid" width="100%" style="margin-top:8px;">
+  <tr>
+    <td><b>Amount (in words)</b><br>
+        <span class="small">
+          {{ frappe.utils.money_in_words(doc.base_grand_total) }}
+        </span></td>
+    </tr>
+    </table>
+  <table class="grid" width="100%" style="margin-top:8px;">
+    <tr>
+      <td><b>Vehicle No.</b><br>{{ doc.get("vehicle_no") or "" }}</td>
+      <td><b>E-Way Bill No.</b><br>{{ doc.get("ewaybill_no") or "" }}</td>
+      
+    </tr>
+  </table>
+
+  <br>
+
+  <table class="grid" width="100%">
+    <tr>
+      <td width="33%" class="signature">
+          <br><br>
+        <b>Receiver's Signature</b>
+      </td>
+      <td width="33%" class="signature">
+          <br><br>
+        <b>Checked By</b>
+      </td>
+      <td width="34%" class="signature">
+          <br><br>        
+        <b>Authorised Signatory</b><br>
+        For {{ company.company_name if company else (doc.company or "") }}
+      </td>
+    </tr>
+  </table>
+
+ 
+
+</div>
